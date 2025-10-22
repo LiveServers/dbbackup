@@ -65,12 +65,12 @@ It supports **full**, **incremental**, and **differential** backups, local and c
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/pybackup.git
-cd pybackup
+git clone https://github.com/LiveServers/dbbackup.git
+cd dbbackup
 
 # Create a virtual environment
-python -m venv venv
-source venv/bin/activate  # or venv\Scripts\activate on Windows
+python -m venv .venv
+source .venv/bin/activate  # or venv\Scripts\activate on Windows
 
 # Install dependencies
 pip install -r requirements.txt

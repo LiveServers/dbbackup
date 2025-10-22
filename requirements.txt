@@ -1,0 +1,9 @@
+typer
+psycopg[binary]
+PyMySQL
+pymongo
+boto3
+google-cloud-storage
+azure-storage-blob
+APScheduler
+loguru

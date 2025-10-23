@@ -65,8 +65,8 @@ It supports **full**, **incremental**, and **differential** backups, local and c
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/pybackup.git
-cd pybackup
+git clone https://github.com/LiveServers/dbbackup.git
+cd dbbackup
 
 # Create a virtual environment
 python -m venv venv
@@ -74,3 +74,29 @@ source venv/bin/activate  # or venv\Scripts\activate on Windows
 
 # Install dependencies
 pip install -r requirements.txt
+
+#Using Docker - recommended
+
+# 1. Make sure you create a config.json in the root dir matching this schema
+class ConfigType(TypedDict):
+    db_name: str
+    db_host: str
+    db_port: str
+    db_username: str
+    db_password: str
+    db_type: str
+    output_path: str
+
+# 2. Build your image
+docker build -t db-backup-tool .
+
+# 3. Run your container - maps from app/backups to your localhost backups directory
+# By default, files will be stored in local file directory, hence a local_storage director will be created and files saved there
+docker run --rm -it \
+  -v $(pwd)/backups:/app/backups \
+  -v $(pwd)/local_storage:/app/local_storage \
+  db-backup-tool
+
+# 4. Test connection to your db
+# 5. Connect to db, enter password, and create a data dump - results will resemble -> local_storage/laundromat-2025-10-23_13-08-49_backup.dump
+

@@ -87,15 +87,26 @@ class ConfigType(TypedDict):
     db_type: str
     output_path: str
 
+# If you want to upload to s3, extend the config with 
+    bucket_name: str
+    region: str
+    access_key_id: str
+    secret_access_key: str
+
 # 2. Build your image
+#Always pass either s3 or local for the storage_type inside Docker
 docker build -t db-backup-tool .
 
 # 3. Run your container - maps from app/backups to your localhost backups directory
-# By default, files will be stored in local file directory, hence a local_storage director will be created and files saved there
+# By default, files will be stored in local file directory, hence a local_storage directory
+# will be created and files saved there
 docker run --rm -it \
   -v $(pwd)/backups:/app/backups \
   -v $(pwd)/local_storage:/app/local_storage \
   db-backup-tool
+
+#if using s3 storage, remove -v $(pwd)/local_storage:/app/local_storage \
+#from the run command
 
 # 4. Test connection to your db
 # 5. Connect to db, enter password, and create a data dump - results will resemble -> local_storage/laundromat-2025-10-23_13-08-49_backup.dump

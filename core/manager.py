@@ -2,19 +2,24 @@ from .postgres_backup import PostgresBackup
 from storage.local_storage import LocalStorage
 from storage.s3_storage import S3Storage
 from typing import cast
+from utils.logger import logger
+import os
+from datetime import datetime as dt
 from .base import ConfigType, BackupTypeConfig, S3Config, PostgresConfig, StorageTypeConfig, POSTGRES_FIELDS, S3_FIELDS
 
 class BackupManager:
-    def __init__(self, config: ConfigType, storage_type: StorageTypeConfig = "local", backup_type: BackupTypeConfig = "full", compression: bool = False):
+    def __init__(self, config: ConfigType, storage_type: StorageTypeConfig = "local", backup_type: BackupTypeConfig = "full", compression: bool = False, verbose: bool = False):
         self.config = config
         self.backup_type = backup_type
         self.compression = compression
         self.storage_type = storage_type
+        self.timestamp = dt.now().strftime("%Y-%m-%d_%H-%M-%S")
+        self.verbose = verbose
     
-    def __local_storage(self, backup_file: str) -> str:
-        local_storage = LocalStorage()
-        data_dump_storage = local_storage.save_backup(backup_file, "local_storage")
-        return data_dump_storage
+    # def __local_storage(self, backup_file: str) -> str:
+    #     local_storage = LocalStorage()
+    #     data_dump_storage = local_storage.save_backup(backup_file, "local_storage")
+    #     return data_dump_storage
 
     def __s3_storage(self, backup_file: str) -> bool:
         s3_config = {k: v for k,v in self.config.items() if k in S3_FIELDS}
@@ -25,8 +30,6 @@ class BackupManager:
     
     def select_storage_from_config(self, storage_type: str, backup_file: str):
         match storage_type:
-            case "local":
-                return self.__local_storage(backup_file)
             case "s3":
                 return self.__s3_storage(backup_file)
             case _:
@@ -35,9 +38,20 @@ class BackupManager:
     def run_postgres_backup(self):
         postgres_config = {k: v for k,v in self.config.items() if k in POSTGRES_FIELDS}
         typed_postgres_config = cast(PostgresConfig, postgres_config)
+        dump_path = os.path.join(
+            typed_postgres_config.get("output_path"),
+            f"{typed_postgres_config.get("db_name")}-{self.timestamp}_backup.dump"
+        )
+
         backup = PostgresBackup(**typed_postgres_config)
-        backup_file = backup.backup()
-        response = self.select_storage_from_config(self.storage_type, backup_file)
-        return response
+        backup_result = backup.backup(dump_path, verbose = self.verbose)
+        
+        for data in backup_result:
+            if self.verbose:
+                logger.info(data)
+
+        if self.storage_type != "local":
+            self.select_storage_from_config(self.storage_type, dump_path)
+        return dump_path
     
         

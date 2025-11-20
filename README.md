@@ -98,15 +98,14 @@ class ConfigType(TypedDict):
 docker build -t db-backup-tool .
 
 # 3. Run your container - maps from app/backups to your localhost backups directory
-# By default, files will be stored in local file directory, hence a local_storage directory
-# will be created and files saved there
+# By default, files will be stored in local file directory
 docker run --rm -it \
   -v $(pwd)/backups:/app/backups \
-  -v $(pwd)/local_storage:/app/local_storage \
   db-backup-tool
 
-#if using s3 storage, remove -v $(pwd)/local_storage:/app/local_storage \
-#from the run command
+#if using s3 storage, add the "--storage-type", "s3" to the Docker CMD
+
+#if you want to see the logs, add "--verbose"
 
 # 4. Test connection to your db
 # 5. Connect to db, enter password, and create a data dump - results will resemble -> local_storage/laundromat-2025-10-23_13-08-49_backup.dump

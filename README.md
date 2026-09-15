@@ -28,8 +28,8 @@ It supports **full**, **incremental**, and **differential** backups, local and c
   - Optional compression using ZIP, Gzip, or Tar to minimize storage size.
 
 - **Scheduling**
-  - Automatic backup scheduling using **cron (Linux/macOS)** or **Windows Task Scheduler**.
-  - Support for custom scheduling intervals.
+  - Daily backups inside Docker using **APScheduler** (default: **9:00pm Africa/Nairobi**).
+  - Custom time (`--at HH:MM`) and timezone (`--timezone` / `TZ`).
 
 - **Restore Operations**
   - Full or selective restore (specific tables/collections where supported)
@@ -93,20 +93,64 @@ class ConfigType(TypedDict):
     access_key_id: str
     secret_access_key: str
 
-# 2. Build your image
-#Always pass either s3 or local for the storage_type inside Docker
-docker build -t db-backup-tool .
+# 2. Run with Docker Compose (recommended)
+# Builds the image, keeps the container running, and restarts it after reboot.
+# Dumps land in ./backups on the host. Default schedule: 21:00 Africa/Nairobi.
+docker compose up -d --build
 
-# 3. Run your container - maps from app/backups to your localhost backups directory
-# By default, files will be stored in local file directory
+# Watch startup logs — you should see the next scheduled run:
+docker compose logs -f dbbackup
+
+# Stop the scheduler:
+docker compose down
+
+# 3. One-off backup (no schedule) — container exits when the dump finishes
+docker build -t db-backup-tool .
 docker run --rm -it \
+  -v $(pwd)/config.json:/app/config.json:ro \
+  -v $(pwd)/backups:/app/backups \
+  db-backup-tool \
+  python3 -m cli.main config.json --verbose
+
+# Scheduled backup without Compose (container must stay running — do not use --rm)
+docker run -d --restart unless-stopped --name dbbackup \
+  -e TZ=Africa/Nairobi \
+  -v $(pwd)/config.json:/app/config.json:ro \
   -v $(pwd)/backups:/app/backups \
   db-backup-tool
 
-#if using s3 storage, add the "--storage-type", "s3" to the Docker CMD
+# S3: add --storage-type s3 to the command (and include S3 keys in config.json)
 
-#if you want to see the logs, add "--verbose"
+# Dump filenames look like:
+# backups/laundromat-2025-10-23_13-08-49_backup.dump
+```
 
-# 4. Test connection to your db
-# 5. Connect to db, enter password, and create a data dump - results will resemble -> local_storage/laundromat-2025-10-23_13-08-49_backup.dump
+## Daily schedule
+
+By default the image runs:
+
+```bash
+python3 -m cli.main config.json --verbose --schedule --at 21:00
+```
+
+| Flag | Default | Meaning |
+| --- | --- | --- |
+| `--schedule` | off (on in Docker `CMD`) | Keep the process alive and backup every day |
+| `--at` | `21:00` | Daily time in 24-hour `HH:MM` |
+| `--timezone` | `TZ` env, else `Africa/Nairobi` | IANA timezone for `--at` |
+| `--verbose` | off (on in Docker `CMD`) | Log `pg_dump` output |
+| `--storage-type` | `local` | `local` or `s3` |
+
+Change timezone in `docker-compose.yml`:
+
+```yaml
+environment:
+  TZ: Africa/Nairobi
+```
+
+Change the clock time by editing the `CMD` in the `Dockerfile`, or override it:
+
+```bash
+docker compose run --rm dbbackup python3 -m cli.main config.json --verbose --schedule --at 21:00 --timezone Africa/Nairobi
+```
 

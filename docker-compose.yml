@@ -1,0 +1,9 @@
+services:
+  dbbackup:
+    build: .
+    restart: unless-stopped
+    volumes:
+      - ./config.json:/app/config.json:ro
+      - ./backups:/app/backups
+    environment:
+      TZ: Africa/Nairobi

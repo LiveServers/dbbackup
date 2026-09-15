@@ -5,5 +5,5 @@ pymongo
 boto3
 google-cloud-storage
 azure-storage-blob
-APScheduler
+APScheduler>=3.10,<4
 loguru

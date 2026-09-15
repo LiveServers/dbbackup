@@ -13,7 +13,6 @@ class BackupManager:
         self.backup_type = backup_type
         self.compression = compression
         self.storage_type = storage_type
-        self.timestamp = dt.now().strftime("%Y-%m-%d_%H-%M-%S")
         self.verbose = verbose
     
     # def __local_storage(self, backup_file: str) -> str:
@@ -38,9 +37,10 @@ class BackupManager:
     def run_postgres_backup(self):
         postgres_config = {k: v for k,v in self.config.items() if k in POSTGRES_FIELDS}
         typed_postgres_config = cast(PostgresConfig, postgres_config)
+        timestamp = dt.now().strftime("%Y-%m-%d_%H-%M-%S")
         dump_path = os.path.join(
             typed_postgres_config.get("output_path"),
-            f"{typed_postgres_config.get("db_name")}-{self.timestamp}_backup.dump"
+            f"{typed_postgres_config.get("db_name")}-{timestamp}_backup.dump"
         )
 
         backup = PostgresBackup(**typed_postgres_config)

@@ -31,7 +31,7 @@ class PostgresBackup(BaseDbBackup):
 
             dump_cmd.append(self.db_name)
 
-            process = subprocess.Popen(dump_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1, env=env)
+            process = subprocess.Popen(dump_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, bufsize=1)
 
             for line in process.stderr:
                 clean = line.rstrip("\n")

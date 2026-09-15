@@ -6,9 +6,12 @@ RUN apt-get update && apt-get install -y \
     mariadb-client \
     netcat-traditional \
     inetutils-telnet \
+    tzdata \
     # mongodb-org-tools \
     gzip \
     && rm -rf /var/lib/apt/lists/*
+
+ENV TZ=Africa/Nairobi
 
 WORKDIR /app
 
@@ -18,5 +21,4 @@ RUN pip3 install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# CMD ["python3", "-m", "cli.main", "--help"]
-CMD ["python3", "-m", "cli.main", "config.json"]
+CMD ["python3", "-m", "cli.main", "config.json", "--verbose", "--schedule", "--at", "21:00"]
